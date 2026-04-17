@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comptabilité</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #051414;
+      --card: #0d1526;
+      --card-border: #162238;
+      --accent: #3498db;
+      --accent-hover: #5dade2;
+      --text: #fff;
+      --input-bg: #fff;
+      --input-text: #111;
+      --radius: 8px;
+      --radius-sm: 6px;
+      --body-bg-image: url("braquage-bg.png");
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Inter", system-ui, sans-serif;
+      background-color: var(--bg);
+      background-image: var(--body-bg-image);
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.45;
+      position: relative;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background: linear-gradient(180deg, rgba(5, 10, 20, 0.82) 0%, rgba(5, 8, 16, 0.92) 100%);
+      pointer-events: none;
+    }
+    .app-main {
+      position: relative;
+      z-index: 1;
+    }
+    .app { max-width: 1280px; margin: 0 auto; padding: 1rem 1rem 2rem; }
+    .tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .tabs button {
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 0.55rem 1.1rem;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      background: var(--card);
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .tabs button:hover { border-color: var(--accent); color: var(--accent); }
+    .tabs button[aria-selected="true"] {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .panel { display: none; }
+    .panel.is-active { display: block; }
+    .action-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.85rem 1rem;
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      margin-bottom: 1rem;
+    }
+    .action-bar select,
+    .action-bar input[type="number"] {
+      font-family: inherit;
+      font-size: 0.875rem;
+      padding: 0.45rem 0.65rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid #ccc;
+      background: var(--input-bg);
+      color: var(--input-text);
+      min-height: 36px;
+    }
+    .action-bar select { min-width: 140px; }
+    .action-bar input[type="number"] { width: 110px; }
+    .action-bar .hint { font-size: 0.85rem; color: rgba(255,255,255,0.75); }
+    .btn-primary {
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 0.5rem 1.25rem;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .inventory-wrap { width: 100%; padding: 0.25rem 0; }
+    .inventory-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+      gap: 0.75rem;
+      align-items: start;
+    }
+    .coffre-category-title {
+      grid-column: 1 / -1;
+      margin-top: 0.25rem;
+      padding: 0.55rem 0.75rem;
+      background: rgba(52, 152, 219, 0.12);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      color: rgba(255,255,255,0.95);
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+    .coffre-category-title:first-child { margin-top: 0; }
+    .item-card {
+      flex: 0 0 auto;
+      width: 118px;
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 0.65rem 0.5rem 0.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .item-thumb {
+      width: 72px;
+      height: 72px;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(145deg, #1a2840, #0d1526);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.75rem;
+      margin-bottom: 0.45rem;
+      border: 1px solid var(--card-border);
+      overflow: hidden;
+    }
+    .item-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .item-name {
+      font-size: 0.72rem;
+      font-weight: 500;
+      word-break: break-all;
+      line-height: 1.2;
+      margin-bottom: 0.2rem;
+      color: rgba(255,255,255,0.95);
+    }
+    .item-qty-row {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      width: 100%;
+      margin-bottom: 0.45rem;
+      justify-content: center;
+    }
+    .item-qty-input {
+      width: 100%;
+      max-width: 52px;
+      min-height: 30px;
+      text-align: center;
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.2rem 0.25rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid #ccc;
+      background: var(--input-bg);
+      color: var(--input-text);
+    }
+    .item-qty-input:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+    .table-wrap {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--card-border); }
+    th {
+      background: rgba(52, 152, 219, 0.12);
+      font-weight: 600;
+      color: var(--accent);
+    }
+    tr:last-child td { border-bottom: none; }
+    td .compta-input.compta-label {
+      max-width: none;
+    }
+    td .compta-input {
+      width: 100%;
+      max-width: 8.5rem;
+      font-family: inherit;
+      font-size: 0.875rem;
+      padding: 0.4rem 0.5rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid #ccc;
+      background: var(--input-bg);
+      color: var(--input-text);
+    }
+    td.compta-solde {
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: rgba(255,255,255,0.92);
+    }
+    td.compta-actions {
+      text-align: center;
+      vertical-align: middle;
+      white-space: nowrap;
+      width: 1%;
+    }
+    .btn-compta-remove {
+      font-family: inherit;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.35rem 0.6rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid #a93226;
+      background: rgba(231, 76, 60, 0.15);
+      color: #ec7063;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .btn-compta-remove:hover {
+      background: rgba(231, 76, 60, 0.28);
+      border-color: #e74c3c;
+    }
+    .summary-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 1rem 1.1rem;
+      margin-bottom: 1rem;
+    }
+    .summary-card h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.85rem;
+      color: var(--text);
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.75rem 1rem;
+    }
+    .summary-grid > div {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm);
+      padding: 0.65rem 0.75rem;
+    }
+    .summary-grid > div.highlight {
+      border-color: rgba(52, 152, 219, 0.45);
+      background: rgba(52, 152, 219, 0.08);
+    }
+    .summary-grid span {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 0.35rem;
+    }
+    .summary-grid strong {
+      font-size: 1.05rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--accent);
+    }
+    .summary-grid > div.highlight strong { color: #fff; }
+    .history-list { display: flex; flex-direction: column; gap: 0.5rem; }
+    .history-row {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 0.85rem 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .history-row time { font-size: 0.8rem; color: rgba(255,255,255,0.55); }
+    .history-row strong { font-size: 0.9rem; }
+    .logs-list { display: flex; flex-direction: column; gap: 0.5rem; }
+    .log-row .log-user {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--accent);
+      padding: 0.2rem 0.55rem;
+      border: 1px solid rgba(219, 52, 60, 0.4);
+      border-radius: var(--radius-sm);
+      white-space: nowrap;
+    }
+    .log-row strong { flex: 1 1 12rem; min-width: 0; font-weight: 500; color: rgba(255,255,255,0.92); }
+    .logs-empty { padding: 1.25rem 1rem; font-size: 0.9rem; color: rgba(255,255,255,0.55); text-align: center; }
+    .toast {
+      position: fixed;
+      bottom: 1.25rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(120%);
+      background: var(--card);
+      border: 1px solid var(--accent);
+      color: #fff;
+      padding: 0.65rem 1.2rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: transform 0.25s, opacity 0.25s;
+      z-index: 400;
+      pointer-events: none;
+    }
+    .toast.is-visible { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+      background: radial-gradient(ellipse 120% 80% at 50% 0%, rgba(18, 32, 56, 0.75) 0%, rgba(5, 10, 20, 0.82) 55%);
+    }
+    .auth-overlay[hidden] { display: none !important; }
+    .auth-card {
+      width: 100%;
+      max-width: 400px;
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 1.75rem 1.5rem;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+    }
+    .auth-card h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 0.35rem;
+      text-align: center;
+    }
+    .auth-card h1.auth-title-with-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55rem;
+    }
+    .auth-title-icon {
+      display: flex;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+    .auth-title-icon svg {
+      display: block;
+    }
+    .auth-card .auth-sub {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.55);
+      text-align: center;
+      margin-bottom: 1.35rem;
+    }
+    .auth-form label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 500;
+      margin-bottom: 0.35rem;
+      color: rgba(255,255,255,0.85);
+    }
+    .auth-form input[type="text"],
+    .auth-form input[type="password"] {
+      width: 100%;
+      font-family: inherit;
+      font-size: 0.9rem;
+      padding: 0.55rem 0.65rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid #ccc;
+      background: var(--input-bg);
+      color: var(--input-text);
+      margin-bottom: 0.95rem;
+    }
+    .auth-form input:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+    .auth-form .btn-block {
+      width: 100%;
+      margin-top: 0.25rem;
+      margin-bottom: 1rem;
+    }
+    .auth-switch {
+      font-size: 0.85rem;
+      text-align: center;
+      color: rgba(255,255,255,0.65);
+    }
+    .auth-switch button {
+      font-family: inherit;
+      font-size: inherit;
+      font-weight: 600;
+      background: none;
+      border: none;
+      color: var(--accent);
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0;
+    }
+    .auth-switch button:hover { color: var(--accent-hover); }
+    .auth-error {
+      margin-top: 0.85rem;
+      padding: 0.55rem 0.65rem;
+      border-radius: var(--radius-sm);
+      background: rgba(231, 76, 60, 0.15);
+      border: 1px solid rgba(231, 76, 60, 0.45);
+      color: #ec7063;
+      font-size: 0.85rem;
+    }
+    .auth-error[hidden] { display: none !important; }
+    .app-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      padding: 0.65rem 0;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .app-header .user-line {
+      font-size: 0.875rem;
+      color: rgba(255,255,255,0.75);
+    }
+    .app-header .user-line strong { color: var(--accent); font-weight: 600; }
+    .app-header-bg-tools {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.35rem 0.65rem;
+    }
+    .btn-bg-soft {
+      font-family: inherit;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.35rem 0.65rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--card-border);
+      background: rgba(0, 0, 0, 0.2);
+      color: rgba(255, 255, 255, 0.85);
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .btn-bg-soft:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .btn-logout {
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.45rem 0.85rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--card-border);
+      background: rgba(0,0,0,0.25);
+      color: rgba(255,255,255,0.9);
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .btn-logout:hover { border-color: #a93226; color: #ec7063; }
+    .readonly-mode-banner {
+      margin: 0 0 1rem;
+      padding: 0.55rem 0.9rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(243, 156, 18, 0.45);
+      background: rgba(243, 156, 18, 0.08);
+      color: #f5b041;
+      font-size: 0.85rem;
+      line-height: 1.4;
+    }
+    .readonly-mode-banner[hidden] { display: none !important; }
+    .item-qty-input:disabled { opacity: 0.55; cursor: not-allowed; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .app-main[hidden] { display: none !important; }
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+  <input type="file" id="bg-file-input" class="visually-hidden" accept="image/*" aria-label="Choisir une image de fond">
+
+  <div id="auth-overlay" class="auth-overlay" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+    <div class="auth-card">
+      <h1 id="auth-title" class="auth-title-with-icon">
+        <span class="auth-title-icon" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+            <line x1="12" y1="22.08" x2="12" y2="12"/>
+          </svg>
+        </span>
+        <span>Inventaire</span>
+      </h1>
+      <p class="auth-sub">Connectez-vous ou créez un compte pour accéder à vos données.</p>
+      <form id="form-login" class="auth-form" autocomplete="on">
+        <label for="login-user">Pseudo</label>
+        <input type="text" id="login-user" name="username" autocomplete="username" required minlength="2" maxlength="32" pattern="[a-zA-Z0-9_\-.]+" title="Lettres, chiffres, _ - .">
+        <label for="login-pass">Mot de passe</label>
+        <input type="password" id="login-pass" name="password" autocomplete="current-password" required minlength="6">
+        <button type="submit" class="btn-primary btn-block">Se connecter</button>
+        <p class="auth-switch">Pas encore de compte ? <button type="button" id="show-register">Créer un compte</button></p>
+      </form>
+      <form id="form-register" class="auth-form" hidden autocomplete="on">
+        <label for="reg-user">Pseudo</label>
+        <input type="text" id="reg-user" name="username" autocomplete="username" required minlength="2" maxlength="32" pattern="[a-zA-Z0-9_\-.]+" title="Lettres, chiffres, _ - .">
+        <label for="reg-pass">Mot de passe</label>
+        <input type="password" id="reg-pass" name="password" autocomplete="new-password" required minlength="6">
+        <label for="reg-pass2">Confirmer le mot de passe</label>
+        <input type="password" id="reg-pass2" name="password2" autocomplete="new-password" required minlength="6">
+        <button type="submit" class="btn-primary btn-block">Créer le compte</button>
+        <p class="auth-switch">Déjà un compte ? <button type="button" id="show-login">Se connecter</button></p>
+      </form>
+      <p id="auth-error" class="auth-error" role="alert" hidden></p>
+    </div>
+  </div>
+
+  <div class="app app-main" id="app-main" hidden>
+    <header class="app-header">
+      <p class="user-line">Connecté : <strong id="session-user-display"></strong></p>
+      <div class="app-header-bg-tools">
+        <button type="button" class="btn-bg-soft" id="bg-choose-app">Fond…</button>
+        <button type="button" class="btn-bg-soft" id="bg-reset-app">Fond défaut</button>
+        <button type="button" class="btn-logout" id="btn-logout">Déconnexion</button>
+      </div>
+    </header>
+    <p id="readonly-mode-banner" class="readonly-mode-banner" role="status" hidden>
+      Comptabilité et coffre : <strong>consultation seule</strong> — votre compte ne peut pas modifier ces sections.
+    </p>
+    <div class="tabs" role="tablist" aria-label="Sections">
+      <button type="button" role="tab" id="tab-compta" aria-selected="false" aria-controls="panel-compta" data-panel="compta">Comptabilité</button>
+      <button type="button" role="tab" id="tab-coffre" aria-selected="true" aria-controls="panel-coffre" data-panel="coffre">Coffre</button>
+      <button type="button" role="tab" id="tab-histo" aria-selected="false" aria-controls="panel-histo" data-panel="histo">Historique</button>
+      <button type="button" role="tab" id="tab-logs" aria-selected="false" aria-controls="panel-logs" data-panel="logs" hidden aria-hidden="true">Logs</button>
+    </div>
+
+    <section id="panel-compta" class="panel" role="tabpanel" aria-labelledby="tab-compta" hidden>
+      <div class="action-bar">
+        <span class="hint">Période</span>
+        <select id="compta-period" aria-label="Période">
+          <option>Mois en cours</option>
+          <option>30 derniers jours</option>
+          <option>Année</option>
+        </select>
+        <button type="button" class="btn-primary" id="compta-export">Exporter</button>
+        <button type="button" class="btn-primary" id="compta-add-row">Ajouter une ligne</button>
+      </div>
+      <div class="summary-card" id="compta-summary" aria-live="polite">
+        <h3>Résumé banque (USD)</h3>
+        <div class="summary-grid">
+          <div><span>Total entrées</span><strong id="sum-in">—</strong></div>
+          <div><span>Total sorties</span><strong id="sum-out">—</strong></div>
+          <div class="highlight"><span>Solde net</span><strong id="sum-net">—</strong></div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Libellé</th>
+              <th>Entrées ($)</th>
+              <th>Sorties ($)</th>
+              <th>Solde ligne</th>
+              <th class="compta-actions"><span class="visually-hidden">Action</span></th>
+            </tr>
+          </thead>
+          <tbody id="compta-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="panel-coffre" class="panel is-active" role="tabpanel" aria-labelledby="tab-coffre">
+      <div class="inventory-wrap">
+        <div class="inventory-grid" id="inventory-grid"></div>
+      </div>
+    </section>
+
+    <section id="panel-histo" class="panel" role="tabpanel" aria-labelledby="tab-histo" hidden>
+      <div class="history-list" id="history-list"></div>
+    </section>
+
+    <section id="panel-logs" class="panel" role="tabpanel" aria-labelledby="tab-logs" hidden>
+      <div class="action-bar">
+        <span class="hint">Connexions, déconnexions et tentatives sur cet appareil (navigateur).</span>
+      </div>
+      <div class="logs-list" id="connection-logs-list" aria-live="polite"></div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+(function () {
+  var ITEMS = [
+
+    { id: "Argent", label: "Argent", category: "Argent", img: "https://items.bit-scripts.com/images/illegal/dirtymoney.png" },
+    { id: "Argent marqué", label: "Argent marqué", category: "Argent", img: "https://items.bit-scripts.com/images/illegal/ilegalmoney.png" },
+//BRAQUAGE
+        { id: "Lockpick", label: "Lockpick", category: "Braquage", img: "https://items.bit-scripts.com/images/illegal/multitool.png" },
+
+
+
+// ARME
+
+    { id: "Mun pistolet", label: "Mun pistolet", category: "Armes", img: "https://items.bit-scripts.com/images/weapons/pistol_ammo.png" },
+    { id: "mun pompe", label: "mun pompe", category: "Armes", img: "https://items.bit-scripts.com/images/weapons/shotgun_ammo.png" },
+    { id: "snspistol", label: "snspistol", category: "Armes", img: "https://items.bit-scripts.com/images/weapons/snspistol_mk2.png" },
+
+// PAWN SHOP
+
+    { id: "Collier", label: "Collier", category: "Pawn Shop", img: "https://items.bit-scripts.com/images/pawn%20shop/10kgoldchain.png" },
+    { id: "montre or", label: "montre or", category: "Pawn Shop", img: "https://items.bit-scripts.com/images/illegal/rolex.png"  },
+    { id: "chaine or", label: "chaine or", category: "Pawn Shop", img: "https://items.bit-scripts.com/images/pawn%20shop/goldchain.png" },
+    { id: "gouse", label: "gouse", category: "Pawn Shop", img: "https://items.bit-scripts.com/images/pawn%20shop/pocketwatch.png" },
+    { id: "bague", label: "bague", category: "Pawn Shop", img: "https://items.bit-scripts.com/images/clothing/megaring.png" },
+  
+// WEED
+
+    { id: "weed", label: "weed", category: "Weed", img: "https://items.bit-scripts.com/images/drugs/weed_baggy.png" },
+    { id: "pochon", label: "pochon", category: "Weed", img: "https://items.bit-scripts.com/images/drugs/baggy_empty2.png" },
+    { id: "table_weed", label: "table_weed", category: "Weed", img: "https://items.bit-scripts.com/images/drugs/table.png" },
+    { id: "purple", label: "purple", category: "Weed", img: "https://items.bit-scripts.com/images/drugs/purple_haze_bag.png" },
+    { id: "Graine", label: "Graine", category: "Weed", img: "https://items.bit-scripts.com/images/drugs/colombiangold_seed.png" },
+    { id: "pot", label: "pot", category: "Weed", img: "https://items.bit-scripts.com/images/drugs/plantpot.png" },
+    { id: "box", label: "box", category: "Weed", img: "https://items.bit-scripts.com/images/props/sf_prop_sf_speaker_wall_01a.png" },
+
+// METH
+    { id: "Amoniac", label: "Amoniac", category: "Meth", img: "https://items.bit-scripts.com/images/drugs/ammonia.png" },
+    { id: "meth impure", label: "meth impure", category: "Meth", img: "https://items.bit-scripts.com/images/drugs/meth_baggy.png" },
+    { id: "meth semi pure", label: "meth semi pure", category: "Meth", img: "https://items.bit-scripts.com/images/drugs/meth.png" },
+    { id: "meth pure", label: "meth pure", category: "Meth", img: "https://items.bit-scripts.com/images/drugs/baggy_meth.png" },
+    { id: "acetone", label: "acetone", category: "Meth", img: "https://items.bit-scripts.com/images/drugs/acetone.png" },
+    { id: "lithium", label: "lithium", category: "Meth", img: "https://items.bit-scripts.com/images/drugs/lithium.png" },
+    { id: "Kit de cuisine ", label: "Kit de cuisine", category: "Meth", img: "https://items.bit-scripts.com/images/drugs/methtable.png" },
+    { id: "Ethanol", label: "Ethanol", category: "Meth", img: "https://items.bit-scripts.com/images/drugs/murioticacid.png" },
+    { id: "pseudo", label: "pseudo", category: "Meth", img: "https://items.bit-scripts.com/images/medical/pseudophederine.png" }
+  ];
+
+  var USERS_STORAGE_KEY = "ia-users-v1";
+  var SESSION_STORAGE_KEY = "ia-session-v1";
+  var LEGACY_QTY_KEY = "ia-coffre-quantities-v1";
+  var CONN_LOGS_STORAGE_KEY = "ia-connection-logs-v1";
+  var CONN_LOGS_MAX = 250;
+
+  // Admins : accès complet (logs + modification comptabilité / coffre). Pseudos en minuscules.
+  var LOGS_ALLOWED_USERS = ["antho"];
+  // Comptes autorisés à modifier comptabilité et coffre (sans être admin). Les admins sont toujours autorisés.
+  var EDIT_COMPTA_COFFRE_USERS = ["antho31o"];
+  // Seuls ces pseudos peuvent changer le fond d’écran (image personnalisée / défaut).
+  var BG_ALLOWED_USERS = ["antho"];
+
+  function normalizeUsername(raw) {
+    return String(raw || "").trim().toLowerCase();
+  }
+
+  function userCanViewLogs(usernameNorm) {
+    if (!usernameNorm || !LOGS_ALLOWED_USERS.length) return false;
+    var u = normalizeUsername(usernameNorm);
+    for (var i = 0; i < LOGS_ALLOWED_USERS.length; i++) {
+      if (normalizeUsername(LOGS_ALLOWED_USERS[i]) === u) return true;
+    }
+    return false;
+  }
+
+  function userCanEditComptaCoffre(usernameNorm) {
+    if (!usernameNorm) return false;
+    if (userCanViewLogs(usernameNorm)) return true;
+    var u = normalizeUsername(usernameNorm);
+    for (var i = 0; i < EDIT_COMPTA_COFFRE_USERS.length; i++) {
+      if (normalizeUsername(EDIT_COMPTA_COFFRE_USERS[i]) === u) return true;
+    }
+    return false;
+  }
+
+  function userCanChangeBackground(usernameNorm) {
+    if (!usernameNorm) return false;
+    var u = normalizeUsername(usernameNorm);
+    for (var i = 0; i < BG_ALLOWED_USERS.length; i++) {
+      if (normalizeUsername(BG_ALLOWED_USERS[i]) === u) return true;
+    }
+    return false;
+  }
+
+  function updateBackgroundControlsVisibility(usernameNorm) {
+    var show = userCanChangeBackground(usernameNorm);
+    var appC = document.getElementById("bg-choose-app");
+    var appR = document.getElementById("bg-reset-app");
+    [appC, appR].forEach(function (el) {
+      if (!el) return;
+      el.hidden = !show;
+      el.style.display = show ? "" : "none";
+      el.setAttribute("aria-hidden", show ? "false" : "true");
+    });
+    var inp = document.getElementById("bg-file-input");
+    if (inp) inp.disabled = !show;
+  }
+
+  function applyComptaCoffreEditState() {
+    var can = userCanEditComptaCoffre(currentUser);
+    var banner = document.getElementById("readonly-mode-banner");
+    if (banner) banner.hidden = can;
+    var period = document.getElementById("compta-period");
+    var exportBtn = document.getElementById("compta-export");
+    var addBtn = document.getElementById("compta-add-row");
+    if (period) period.disabled = !can;
+    if (exportBtn) exportBtn.disabled = !can;
+    if (addBtn) addBtn.disabled = !can;
+    var tbody = document.getElementById("compta-tbody");
+    if (tbody) {
+      tbody.querySelectorAll("input").forEach(function (inp) {
+        inp.disabled = !can;
+      });
+      tbody.querySelectorAll("button").forEach(function (btn) {
+        btn.disabled = !can;
+      });
+    }
+  }
+
+  function updateLogsTabVisibility(usernameNorm) {
+    var tab = document.getElementById("tab-logs");
+    if (!tab) return;
+    var show = userCanViewLogs(usernameNorm);
+    tab.hidden = !show;
+    tab.style.display = show ? "" : "none";
+    tab.setAttribute("aria-hidden", show ? "false" : "true");
+    if (!show) {
+      var pl = document.getElementById("panel-logs");
+      if (pl && pl.classList.contains("is-active")) {
+        var coffreBtn = document.getElementById("tab-coffre");
+        if (coffreBtn) coffreBtn.click();
+      }
+    }
+  }
+
+  function qtyStorageKeyForUser(username) {
+    return LEGACY_QTY_KEY + ":" + username;
+  }
+
+  var ACTIVITY_HISTORY_GLOBAL_KEY = "ia-activity-history-global-v1";
+  var ACTIVITY_HISTORY_LEGACY_PREFIX = "ia-activity-history-v1:";
+  var ACTIVITY_HISTORY_MAX = 300;
+
+  function activityHistoryLegacyKeyForUser(username) {
+    return ACTIVITY_HISTORY_LEGACY_PREFIX + username;
+  }
+
+  var activityHistory = [];
+
+  function loadActivityHistoryFromStorage() {
+    activityHistory = [];
+    try {
+      var raw = localStorage.getItem(ACTIVITY_HISTORY_GLOBAL_KEY);
+      if (raw) {
+        var arr = JSON.parse(raw);
+        if (Array.isArray(arr)) {
+          arr.forEach(function (item) {
+            if (item && typeof item.ts === "number" && typeof item.m === "string") {
+              activityHistory.push({
+                ts: item.ts,
+                m: item.m,
+                u: typeof item.u === "string" && item.u ? item.u : "\u2014"
+              });
+            }
+          });
+        }
+      }
+      if (currentUser) {
+        var leg = localStorage.getItem(activityHistoryLegacyKeyForUser(currentUser));
+        if (leg) {
+          var oldArr = JSON.parse(leg);
+          if (Array.isArray(oldArr)) {
+            oldArr.forEach(function (item) {
+              if (item && typeof item.ts === "number" && typeof item.m === "string") {
+                activityHistory.push({
+                  ts: item.ts,
+                  m: item.m,
+                  u: typeof item.u === "string" && item.u ? item.u : currentUser
+                });
+              }
+            });
+            try {
+              localStorage.removeItem(activityHistoryLegacyKeyForUser(currentUser));
+            } catch (err2) {}
+          }
+        }
+      }
+      activityHistory.sort(function (a, b) {
+        return b.ts - a.ts;
+      });
+      var seen = {};
+      activityHistory = activityHistory.filter(function (e) {
+        var k = e.ts + "\u0000" + e.m + "\u0000" + (e.u || "");
+        if (seen[k]) return false;
+        seen[k] = true;
+        return true;
+      });
+      if (activityHistory.length > ACTIVITY_HISTORY_MAX) {
+        activityHistory.length = ACTIVITY_HISTORY_MAX;
+      }
+      saveActivityHistoryToStorage();
+    } catch (err) {}
+  }
+
+  function saveActivityHistoryToStorage() {
+    try {
+      localStorage.setItem(ACTIVITY_HISTORY_GLOBAL_KEY, JSON.stringify(activityHistory));
+    } catch (err) {}
+  }
+
+  var currentUser = null;
+
+  function sha256Hex(text) {
+    function hashFallback(t) {
+      var s = String(t) + "\u0000ia-auth-v1";
+      var hex = "";
+      var x = 2166136261;
+      for (var round = 0; round < 48; round++) {
+        for (var i = 0; i < s.length; i++) {
+          x ^= s.charCodeAt(i);
+          x = Math.imul(x, 16777619) >>> 0;
+          x = (x + round * 1315423911 + i * 997) >>> 0;
+        }
+        hex += ("00000000" + x.toString(16)).slice(-8);
+      }
+      return "fb:" + hex;
+    }
+    if (!window.crypto || !crypto.subtle) {
+      return Promise.resolve(hashFallback(text));
+    }
+    var enc = new TextEncoder();
+    return crypto.subtle.digest("SHA-256", enc.encode(text)).then(function (buf) {
+      var arr = new Uint8Array(buf);
+      var hex = "";
+      for (var i = 0; i < arr.length; i++) {
+        hex += arr[i].toString(16).padStart(2, "0");
+      }
+      return hex;
+    });
+  }
+
+  function getUsers() {
+    try {
+      var raw = localStorage.getItem(USERS_STORAGE_KEY);
+      if (!raw) return [];
+      var list = JSON.parse(raw);
+      return Array.isArray(list) ? list : [];
+    } catch (err) {
+      return [];
+    }
+  }
+
+  function saveUsers(list) {
+    try {
+      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(list));
+    } catch (err) {}
+  }
+
+  function findUserRecord(usernameNorm) {
+    var list = getUsers();
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].u === usernameNorm) return list[i];
+    }
+    return null;
+  }
+
+  var quantities = {};
+  ITEMS.forEach(function (it) { quantities[it.id] = 0; });
+
+  function resetQuantitiesToZero() {
+    ITEMS.forEach(function (it) { quantities[it.id] = 0; });
+  }
+
+  function loadQuantitiesFromStorage() {
+    if (!currentUser) return;
+    resetQuantitiesToZero();
+    try {
+      var raw = localStorage.getItem(qtyStorageKeyForUser(currentUser));
+      if (!raw) return;
+      var data = JSON.parse(raw);
+      if (!data || typeof data !== "object") return;
+      ITEMS.forEach(function (it) {
+        if (Object.prototype.hasOwnProperty.call(data, it.id)) {
+          var n = parseInt(data[it.id], 10);
+          if (!isNaN(n) && n >= 0) quantities[it.id] = n;
+        }
+      });
+    } catch (err) {}
+  }
+
+  function saveQuantitiesToStorage() {
+    if (!currentUser) return;
+    try {
+      var out = {};
+      ITEMS.forEach(function (it) {
+        var q = quantities[it.id];
+        out[it.id] = typeof q === "number" && q >= 0 ? q : 0;
+      });
+      localStorage.setItem(qtyStorageKeyForUser(currentUser), JSON.stringify(out));
+    } catch (err) {}
+  }
+
+  function migrateLegacyQuantitiesToUser(usernameNorm) {
+    try {
+      var legacy = localStorage.getItem(LEGACY_QTY_KEY);
+      if (!legacy) return;
+      var userKey = qtyStorageKeyForUser(usernameNorm);
+      if (localStorage.getItem(userKey)) {
+        localStorage.removeItem(LEGACY_QTY_KEY);
+        return;
+      }
+      localStorage.setItem(userKey, legacy);
+      localStorage.removeItem(LEGACY_QTY_KEY);
+    } catch (err) {}
+  }
+
+  var authOverlay = document.getElementById("auth-overlay");
+  var appMain = document.getElementById("app-main");
+  var authError = document.getElementById("auth-error");
+  var formLogin = document.getElementById("form-login");
+  var formRegister = document.getElementById("form-register");
+  var sessionUserDisplay = document.getElementById("session-user-display");
+  var btnLogout = document.getElementById("btn-logout");
+
+  function setAuthError(msg) {
+    if (!msg) {
+      authError.hidden = true;
+      authError.textContent = "";
+      return;
+    }
+    authError.hidden = false;
+    authError.textContent = msg;
+  }
+
+  function showAuthForm(which) {
+    setAuthError("");
+    if (which === "register") {
+      formLogin.hidden = true;
+      formRegister.hidden = false;
+    } else {
+      formRegister.hidden = true;
+      formLogin.hidden = false;
+    }
+  }
+
+  document.getElementById("show-register").addEventListener("click", function () {
+    showAuthForm("register");
+  });
+  document.getElementById("show-login").addEventListener("click", function () {
+    showAuthForm("login");
+  });
+
+  function escapeHtml(str) {
+    var d = document.createElement("div");
+    d.textContent = String(str != null ? str : "");
+    return d.innerHTML;
+  }
+
+  function getConnectionLogs() {
+    try {
+      var raw = localStorage.getItem(CONN_LOGS_STORAGE_KEY);
+      if (!raw) return [];
+      var arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : [];
+    } catch (err) {
+      return [];
+    }
+  }
+
+  function pushConnectionLog(username, message) {
+    try {
+      var list = getConnectionLogs();
+      list.unshift({
+        ts: Date.now(),
+        user: username && String(username).trim() ? String(username).trim() : "—",
+        msg: String(message || "")
+      });
+      if (list.length > CONN_LOGS_MAX) list.length = CONN_LOGS_MAX;
+      localStorage.setItem(CONN_LOGS_STORAGE_KEY, JSON.stringify(list));
+    } catch (err) {}
+    var logsPanel = document.getElementById("panel-logs");
+    if (userCanViewLogs(currentUser) && logsPanel && logsPanel.classList.contains("is-active")) {
+      renderConnectionLogs();
+    }
+  }
+
+  function formatConnectionLogTime(ts) {
+    try {
+      return new Date(ts).toLocaleString("fr-FR", { dateStyle: "medium", timeStyle: "short" });
+    } catch (e) {
+      return "—";
+    }
+  }
+
+  function renderConnectionLogs() {
+    if (!userCanViewLogs(currentUser)) return;
+    var el = document.getElementById("connection-logs-list");
+    if (!el) return;
+    el.innerHTML = "";
+    var logs = getConnectionLogs();
+    if (!logs.length) {
+      var p = document.createElement("p");
+      p.className = "logs-empty";
+      p.textContent = "Aucun événement enregistré pour l\u2019instant.";
+      el.appendChild(p);
+      return;
+    }
+    logs.forEach(function (row) {
+      var div = document.createElement("div");
+      div.className = "history-row log-row";
+      div.innerHTML =
+        "<time>" + escapeHtml(formatConnectionLogTime(row.ts)) + "</time>" +
+        "<span class=\"log-user\">" + escapeHtml(row.user) + "</span>" +
+        "<strong>" + escapeHtml(row.msg) + "</strong>";
+      el.appendChild(div);
+    });
+  }
+
+  function enterApp(usernameNorm, authEvent) {
+    currentUser = usernameNorm;
+    try {
+      localStorage.setItem(SESSION_STORAGE_KEY, usernameNorm);
+    } catch (err) {}
+    sessionUserDisplay.textContent = usernameNorm;
+    authOverlay.hidden = true;
+    appMain.hidden = false;
+    loadQuantitiesFromStorage();
+    loadActivityHistoryFromStorage();
+    renderGrid();
+    renderHistory();
+    if (authEvent === "session") {
+      pushConnectionLog(usernameNorm, "Session restaur\u00E9e (rechargement de la page)");
+    } else if (authEvent === "login") {
+      pushConnectionLog(usernameNorm, "Connexion r\u00E9ussie");
+    } else if (authEvent === "register") {
+      pushConnectionLog(usernameNorm, "Inscription et premi\u00E8re connexion");
+    }
+    updateLogsTabVisibility(usernameNorm);
+    applyComptaCoffreEditState();
+    updateBackgroundControlsVisibility(usernameNorm);
+  }
+
+  function leaveApp() {
+    var who = currentUser;
+    saveQuantitiesToStorage();
+    if (who) {
+      pushConnectionLog(who, "D\u00E9connexion");
+    }
+    currentUser = null;
+    try {
+      localStorage.removeItem(SESSION_STORAGE_KEY);
+    } catch (err) {}
+    resetQuantitiesToZero();
+    activityHistory = [];
+    var invEl = document.getElementById("inventory-grid");
+    if (invEl) invEl.innerHTML = "";
+    appMain.hidden = true;
+    authOverlay.hidden = false;
+    showAuthForm("login");
+    formLogin.reset();
+    formRegister.reset();
+    setAuthError("");
+    updateLogsTabVisibility(null);
+    var roBanner = document.getElementById("readonly-mode-banner");
+    if (roBanner) roBanner.hidden = true;
+    updateBackgroundControlsVisibility(null);
+  }
+
+  formLogin.addEventListener("submit", function (e) {
+    e.preventDefault();
+    setAuthError("");
+    var u = normalizeUsername(document.getElementById("login-user").value);
+    var pass = document.getElementById("login-pass").value;
+    if (u.length < 2) {
+      setAuthError("Pseudo trop court.");
+      return;
+    }
+    var rec = findUserRecord(u);
+    if (!rec) {
+      pushConnectionLog(u || "—", "Tentative \u00E9chou\u00E9e (pseudo inconnu)");
+      setAuthError("Aucun compte avec ce pseudo.");
+      return;
+    }
+    sha256Hex(pass).then(function (hash) {
+      if (hash !== rec.h) {
+        pushConnectionLog(u, "Tentative \u00E9chou\u00E9e (mot de passe incorrect)");
+        setAuthError("Mot de passe incorrect.");
+        return;
+      }
+      enterApp(u, "login");
+      formLogin.reset();
+    }).catch(function (err) {
+      setAuthError(err.message || "Connexion impossible.");
+    });
+  });
+
+  formRegister.addEventListener("submit", function (e) {
+    e.preventDefault();
+    setAuthError("");
+    var u = normalizeUsername(document.getElementById("reg-user").value);
+    var pass = document.getElementById("reg-pass").value;
+    var pass2 = document.getElementById("reg-pass2").value;
+    if (u.length < 2) {
+      setAuthError("Pseudo trop court (2 caractères minimum).");
+      return;
+    }
+    if (pass.length < 6) {
+      setAuthError("Mot de passe trop court (6 caractères minimum).");
+      return;
+    }
+    if (pass !== pass2) {
+      setAuthError("Les mots de passe ne correspondent pas.");
+      return;
+    }
+    if (findUserRecord(u)) {
+      setAuthError("Ce pseudo est déjà utilisé.");
+      return;
+    }
+    var wasEmpty = getUsers().length === 0;
+    sha256Hex(pass).then(function (hash) {
+      var list = getUsers();
+      list.push({ u: u, h: hash });
+      saveUsers(list);
+      if (wasEmpty) migrateLegacyQuantitiesToUser(u);
+      enterApp(u, "register");
+      formRegister.reset();
+    }).catch(function (err) {
+      setAuthError(err.message || "Inscription impossible.");
+    });
+  });
+
+  btnLogout.addEventListener("click", function () {
+    leaveApp();
+  });
+
+  function trySessionResume() {
+    try {
+      var s = localStorage.getItem(SESSION_STORAGE_KEY);
+      if (!s) return false;
+      var norm = normalizeUsername(s);
+      if (!findUserRecord(norm)) {
+        localStorage.removeItem(SESSION_STORAGE_KEY);
+        return false;
+      }
+      enterApp(norm, "session");
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  var grid = document.getElementById("inventory-grid");
+  var toast = document.getElementById("toast");
+  var historyList = document.getElementById("history-list");
+
+  function formatActivityTime(ts) {
+    try {
+      return new Date(ts).toLocaleString("fr-FR", { dateStyle: "medium", timeStyle: "short" });
+    } catch (e) {
+      return "\u2014";
+    }
+  }
+
+  function appendActivityHistory(message) {
+    if (!currentUser || message == null || message === "") return;
+    activityHistory.unshift({ ts: Date.now(), u: currentUser, m: String(message) });
+    if (activityHistory.length > ACTIVITY_HISTORY_MAX) activityHistory.length = ACTIVITY_HISTORY_MAX;
+    saveActivityHistoryToStorage();
+    if (historyList) renderHistory();
+  }
+
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add("is-visible");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(function () { toast.classList.remove("is-visible"); }, 2200);
+  }
+
+  var BG_STORAGE_KEY = "ia-custom-bg-v1";
+  var BG_MAX_BYTES = 2621440;
+
+  function applyBackgroundFromStorage() {
+    try {
+      var data = localStorage.getItem(BG_STORAGE_KEY);
+      if (data && data.indexOf("data:image/") === 0) {
+        document.documentElement.style.setProperty("--body-bg-image", "url(" + JSON.stringify(data) + ")");
+        return;
+      }
+    } catch (err) {}
+    document.documentElement.style.removeProperty("--body-bg-image");
+  }
+
+  function resetBackground() {
+    if (!userCanChangeBackground(currentUser)) {
+      showToast("Seul un compte autoris\u00E9 peut modifier le fond d\u2019\u00E9cran.");
+      return;
+    }
+    try {
+      localStorage.removeItem(BG_STORAGE_KEY);
+    } catch (err) {}
+    document.documentElement.style.removeProperty("--body-bg-image");
+    showToast("Fond par d\u00E9faut (fichier du dossier)");
+  }
+
+  function initBackgroundPicker() {
+    var inp = document.getElementById("bg-file-input");
+    var appC = document.getElementById("bg-choose-app");
+    var appR = document.getElementById("bg-reset-app");
+    applyBackgroundFromStorage();
+    if (!inp) return;
+    function openPicker() {
+      if (!userCanChangeBackground(currentUser)) {
+        showToast("Seul un compte autoris\u00E9 peut modifier le fond d\u2019\u00E9cran.");
+        return;
+      }
+      inp.click();
+    }
+    if (appC) appC.addEventListener("click", openPicker);
+    if (appR) appR.addEventListener("click", resetBackground);
+    inp.addEventListener("change", function () {
+      if (!userCanChangeBackground(currentUser)) {
+        inp.value = "";
+        showToast("Seul un compte autoris\u00E9 peut modifier le fond d\u2019\u00E9cran.");
+        return;
+      }
+      var f = inp.files && inp.files[0];
+      inp.value = "";
+      if (!f || !f.type || f.type.indexOf("image/") !== 0) return;
+      if (f.size > BG_MAX_BYTES) {
+        showToast("Image trop lourde (max. ~2,5 Mo).");
+        return;
+      }
+      var fr = new FileReader();
+      fr.onload = function () {
+        var data = fr.result;
+        try {
+          localStorage.setItem(BG_STORAGE_KEY, data);
+          document.documentElement.style.setProperty("--body-bg-image", "url(" + JSON.stringify(data) + ")");
+          showToast("Fond d\u2019\u00E9cran mis \u00E0 jour");
+        } catch (err) {
+          showToast("Impossible d\u2019enregistrer (stockage plein ?).");
+        }
+      };
+      fr.readAsDataURL(f);
+    });
+    updateBackgroundControlsVisibility(null);
+  }
+
+  function renderHistory() {
+    if (!historyList) return;
+    historyList.innerHTML = "";
+    if (!activityHistory.length) {
+      var empty = document.createElement("p");
+      empty.className = "logs-empty";
+      empty.textContent = "Aucune activit\u00E9 sur le coffre ou la comptabilit\u00E9 pour l\u2019instant.";
+      historyList.appendChild(empty);
+      return;
+    }
+    activityHistory.forEach(function (e) {
+      var row = document.createElement("div");
+      row.className = "history-row log-row";
+      var who = e.u && String(e.u).trim() ? String(e.u).trim() : "\u2014";
+      row.innerHTML =
+        "<time>" + escapeHtml(formatActivityTime(e.ts)) + "</time>" +
+        "<span class=\"log-user\" title=\"Auteur\">" + escapeHtml(who) + "</span>" +
+        "<strong>" + escapeHtml(e.m) + "</strong>";
+      historyList.appendChild(row);
+    });
+  }
+
+  function commitQty(id, label, input, rawValue) {
+    if (!userCanEditComptaCoffre(currentUser)) return;
+    var oldVal = quantities[id];
+    var v = parseInt(rawValue, 10);
+    if (isNaN(v) || v < 0) v = 0;
+    quantities[id] = v;
+    input.value = v;
+    saveQuantitiesToStorage();
+    if (v !== oldVal) {
+      appendActivityHistory("Coffre : " + label + " " + oldVal + " \u2192 " + v);
+    }
+  }
+
+  function renderGrid() {
+    grid.innerHTML = "";
+    var canEdit = userCanEditComptaCoffre(currentUser);
+    var groupOrder = [];
+    var groups = {};
+    ITEMS.forEach(function (it) {
+      var cat = (it && it.category) ? String(it.category) : "Autre";
+      if (!Object.prototype.hasOwnProperty.call(groups, cat)) {
+        groups[cat] = [];
+        groupOrder.push(cat);
+      }
+      groups[cat].push(it);
+    });
+
+    function renderItemCard(it) {
+      var card = document.createElement("article");
+      card.className = "item-card";
+
+      var thumb = document.createElement("div");
+      thumb.className = "item-thumb";
+      thumb.setAttribute("aria-hidden", "true");
+      if (it.img) {
+        var im = document.createElement("img");
+        im.src = it.img;
+        im.alt = "";
+        im.loading = "lazy";
+        im.decoding = "async";
+        im.addEventListener("error", function () {
+          im.remove();
+          thumb.textContent = it.label.charAt(0).toUpperCase();
+        });
+        thumb.appendChild(im);
+      } else if (it.emoji) {
+        thumb.textContent = it.emoji;
+      } else {
+        thumb.textContent = "?";
+      }
+
+      var name = document.createElement("p");
+      name.className = "item-name";
+      name.textContent = it.label;
+
+      var qtyRow = document.createElement("div");
+      qtyRow.className = "item-qty-row";
+
+      var qtyInput = document.createElement("input");
+      qtyInput.type = "number";
+      qtyInput.min = "0";
+      qtyInput.step = "1";
+      qtyInput.className = "item-qty-input";
+      qtyInput.value = String(quantities[it.id]);
+      qtyInput.setAttribute("aria-label", "Quantité " + it.label);
+      qtyInput.disabled = !canEdit;
+      qtyInput.addEventListener("change", function () {
+        commitQty(it.id, it.label, qtyInput, qtyInput.value);
+      });
+      qtyInput.addEventListener("blur", function () {
+        commitQty(it.id, it.label, qtyInput, qtyInput.value);
+      });
+
+      qtyRow.appendChild(qtyInput);
+
+      card.appendChild(thumb);
+      card.appendChild(name);
+      card.appendChild(qtyRow);
+      grid.appendChild(card);
+    }
+
+    groupOrder.forEach(function (cat) {
+      var title = document.createElement("h3");
+      title.className = "coffre-category-title";
+      title.textContent = cat;
+      grid.appendChild(title);
+
+      groups[cat].forEach(function (it) {
+        renderItemCard(it);
+      });
+    });
+  }
+
+  document.getElementById("compta-export").addEventListener("click", function () {
+    if (!userCanEditComptaCoffre(currentUser)) {
+      showToast("Export r\u00E9serv\u00E9 aux comptes autoris\u00E9s \u00E0 modifier la comptabilit\u00E9.");
+      return;
+    }
+    appendActivityHistory("Compta : export (simulation)");
+    showToast("Export simul\u00E9");
+  });
+
+  var comptaPeriodEl = document.getElementById("compta-period");
+  if (comptaPeriodEl) {
+    comptaPeriodEl.addEventListener("change", function () {
+      if (!userCanEditComptaCoffre(currentUser)) return;
+      appendActivityHistory("Compta : p\u00E9riode \u00AB " + comptaPeriodEl.value + " \u00BB");
+    });
+  }
+
+  function parseMoney(raw) {
+    var n = parseFloat(String(raw).replace(/\s/g, "").replace(",", "."));
+    if (isNaN(n) || n < 0) return 0;
+    return Math.round(n);
+  }
+
+  function formatMoneyUSD(n) {
+    return n.toLocaleString("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    });
+  }
+
+  function logComptaChangeFromEvent(e) {
+    if (!userCanEditComptaCoffre(currentUser)) return;
+    var inp = e.target;
+    if (!inp || inp.tagName !== "INPUT") return;
+    var tbody = document.getElementById("compta-tbody");
+    if (!tbody || !tbody.contains(inp)) return;
+    var row = inp.closest("tr");
+    if (!row || !tbody.contains(row)) return;
+    var labelInp = row.querySelector(".compta-label");
+    var inInp = row.querySelector("[data-compta-in]");
+    var outInp = row.querySelector("[data-compta-out]");
+    var label = (labelInp && labelInp.value.trim()) ? labelInp.value.trim() : "(sans libell\u00E9)";
+    var vIn = inInp ? parseMoney(inInp.value) : 0;
+    var vOut = outInp ? parseMoney(outInp.value) : 0;
+    appendActivityHistory("Compta : " + label + " \u2014 entr\u00E9es " + formatMoneyUSD(vIn) + " \u2014 sorties " + formatMoneyUSD(vOut));
+  }
+
+  function refreshComptaFromInputs() {
+    var tbody = document.getElementById("compta-tbody");
+    var elIn = document.getElementById("sum-in");
+    var elOut = document.getElementById("sum-out");
+    var elNet = document.getElementById("sum-net");
+    if (!tbody) return;
+
+    var totalIn = 0;
+    var totalOut = 0;
+    var rows = tbody.querySelectorAll("tr");
+    rows.forEach(function (row) {
+      var inputIn = row.querySelector("[data-compta-in]");
+      var inputOut = row.querySelector("[data-compta-out]");
+      var cellSolde = row.querySelector("[data-compta-solde]");
+      if (!inputIn || !inputOut || !cellSolde) return;
+      var vIn = parseMoney(inputIn.value);
+      var vOut = parseMoney(inputOut.value);
+      totalIn += vIn;
+      totalOut += vOut;
+      var line = vIn - vOut;
+      cellSolde.textContent = formatMoneyUSD(line);
+    });
+
+    if (elIn) elIn.textContent = formatMoneyUSD(totalIn);
+    if (elOut) elOut.textContent = formatMoneyUSD(totalOut);
+    if (elNet) elNet.textContent = formatMoneyUSD(totalIn - totalOut);
+  }
+
+  function addComptaRow() {
+    if (!userCanEditComptaCoffre(currentUser)) {
+      showToast("Ajout de ligne r\u00E9serv\u00E9 aux comptes autoris\u00E9s.");
+      return;
+    }
+    var tbody = document.getElementById("compta-tbody");
+    if (!tbody) return;
+
+    var tr = document.createElement("tr");
+    var tdLabel = document.createElement("td");
+    var labelInp = document.createElement("input");
+    labelInp.type = "text";
+    labelInp.className = "compta-input compta-label";
+    labelInp.placeholder = "Libellé";
+    labelInp.setAttribute("aria-label", "Libellé de la ligne");
+    tdLabel.appendChild(labelInp);
+
+    var tdIn = document.createElement("td");
+    var inInp = document.createElement("input");
+    inInp.type = "number";
+    inInp.min = "0";
+    inInp.step = "1";
+    inInp.className = "compta-input";
+    inInp.setAttribute("data-compta-in", "");
+    inInp.value = "0";
+    inInp.setAttribute("aria-label", "Entrées");
+    tdIn.appendChild(inInp);
+
+    var tdOut = document.createElement("td");
+    var outInp = document.createElement("input");
+    outInp.type = "number";
+    outInp.min = "0";
+    outInp.step = "1";
+    outInp.className = "compta-input";
+    outInp.setAttribute("data-compta-out", "");
+    outInp.value = "0";
+    outInp.setAttribute("aria-label", "Sorties");
+    tdOut.appendChild(outInp);
+
+    var tdSolde = document.createElement("td");
+    tdSolde.className = "compta-solde";
+    tdSolde.setAttribute("data-compta-solde", "");
+
+    var tdAct = document.createElement("td");
+    tdAct.className = "compta-actions";
+    var btnRm = document.createElement("button");
+    btnRm.type = "button";
+    btnRm.className = "btn-compta-remove";
+    btnRm.setAttribute("data-compta-remove", "");
+    btnRm.setAttribute("aria-label", "Supprimer cette ligne");
+    btnRm.textContent = "Supprimer";
+    tdAct.appendChild(btnRm);
+
+    tr.appendChild(tdLabel);
+    tr.appendChild(tdIn);
+    tr.appendChild(tdOut);
+    tr.appendChild(tdSolde);
+    tr.appendChild(tdAct);
+    tbody.appendChild(tr);
+    refreshComptaFromInputs();
+    appendActivityHistory("Compta : nouvelle ligne ajout\u00E9e");
+    labelInp.focus();
+  }
+
+  var comptaTbody = document.getElementById("compta-tbody");
+  if (comptaTbody) {
+    comptaTbody.addEventListener("input", refreshComptaFromInputs);
+    comptaTbody.addEventListener("change", function (e) {
+      refreshComptaFromInputs();
+      logComptaChangeFromEvent(e);
+    });
+    comptaTbody.addEventListener("click", function (e) {
+      if (!userCanEditComptaCoffre(currentUser)) return;
+      var t = e.target;
+      if (!t || !t.closest) return;
+      var rm = t.closest("[data-compta-remove]");
+      if (!rm || !comptaTbody.contains(rm)) return;
+      var row = rm.closest("tr");
+      if (row && row.parentNode === comptaTbody) {
+        var labelInpRm = row.querySelector(".compta-label");
+        var labRm = labelInpRm && labelInpRm.value.trim() ? labelInpRm.value.trim() : "(sans libell\u00E9)";
+        appendActivityHistory("Compta : ligne supprim\u00E9e \u2014 " + labRm);
+        row.remove();
+        refreshComptaFromInputs();
+      }
+    });
+  }
+
+  var btnAddRow = document.getElementById("compta-add-row");
+  if (btnAddRow) btnAddRow.addEventListener("click", addComptaRow);
+
+  refreshComptaFromInputs();
+
+  var tabButtons = document.querySelectorAll(".tabs [role='tab']");
+  var panels = {
+    compta: document.getElementById("panel-compta"),
+    coffre: document.getElementById("panel-coffre"),
+    histo: document.getElementById("panel-histo"),
+    logs: document.getElementById("panel-logs")
+  };
+
+  tabButtons.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var key = btn.getAttribute("data-panel");
+      if (key === "logs" && !userCanViewLogs(currentUser)) {
+        showToast("Acc\u00E8s aux logs r\u00E9serv\u00E9 \u00E0 certains comptes.");
+        return;
+      }
+      tabButtons.forEach(function (b) {
+        b.setAttribute("aria-selected", b === btn ? "true" : "false");
+      });
+      Object.keys(panels).forEach(function (k) {
+        var on = k === key;
+        panels[k].hidden = !on;
+        panels[k].classList.toggle("is-active", on);
+        if (on && k === "logs" && userCanViewLogs(currentUser)) renderConnectionLogs();
+      });
+    });
+  });
+
+  initBackgroundPicker();
+  trySessionResume();
+})();
+  </script>
+</body>
+</html>
